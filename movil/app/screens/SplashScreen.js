@@ -1,21 +1,29 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, StatusBar} from 'react-native';
 import * as Animatable from 'react-native-animatable';
-import {imageBackgroundStyle} from '@styles/General';
-
+import {splashStyles} from '@styles/styles';
+import useAuth from '@hooks/useAuth';
+import AsyncStorage from '@react-native-community/async-storage';
 const SplashScreen = ({navigation}) => {
-  const goToScreen = routeName => {
-    navigation.navigate(routeName);
-  };
+  const {setUser} = useAuth();
+  const [token, setToken] = useState('');
   useEffect(() => {
-    const timer = setTimeout(() => {
-      goToScreen('Login');
-    }, 5000);
-    return () => clearTimeout(timer);
+    fecthSesion();
+    getStorage();
   }, []);
 
+  const getStorage = async token => {
+    try {
+      const Storage = await AsyncStorage.getItem('token');
+      setToken(Storage);
+      setUser(Storage);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
-    <View style={imageBackgroundStyle.image}>
+    <View style={splashStyles.image}>
       <StatusBar translucent backgroundColor="rgba(0,0,0,0.2)" />
       <Animatable.Image
         animation="pulse"
@@ -26,10 +34,25 @@ const SplashScreen = ({navigation}) => {
           height: 200,
           margin: 100,
         }}
-        source={require('@recursos/imagen/logo.jpeg')}
+        source={require('@recursos/images/LogoApro.png')}
       />
     </View>
   );
+  async function fecthSesion() {
+    if (token === null) {
+      setTimeout(() => {
+        goToScreen('Login');
+      }, 5000);
+      return;
+    }
+    setTimeout(() => {
+      goToScreen('Principal');
+    }, 5000);
+  }
+
+  function goToScreen(routeName) {
+    navigation.replace(routeName);
+  }
 };
 
 export default SplashScreen;

@@ -1,5 +1,5 @@
 import {StyleSheet} from 'react-native';
-import Colors from './Color';
+import Colors from './color';
 
 const imageBackgroundStyle = StyleSheet.create({
   image: {
