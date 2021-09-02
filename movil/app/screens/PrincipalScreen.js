@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Button,
   Touchable,
+  Alert,
+  StyleSheet,
 } from 'react-native';
 import {loginStyles, mainStyles} from '@styles/styles';
 import MyButton from '@components/MyButton';
@@ -13,11 +15,14 @@ import color from '@styles/colors';
 import useAuth from '@hooks/useAuth';
 import axios from 'react-native-axios';
 import {ServerApi} from '@recursos/ServerApi';
+import AsyncStorage from '@react-native-community/async-storage';
+import {setToken, getToken} from '@recursos/token';
 const PrincipalScreen = ({navigation}) => {
-  const {auth} = useAuth();
+  const {auth, logout, setAuth} = useAuth();
   const [data, setData] = useState([]);
 
   useEffect(() => {
+    const ac = new AbortController();
     var url = ServerApi;
     var request = `/getTicketsPreparador/${auth.idPreparador}`;
     const fecthTickets = async () => {
@@ -27,6 +32,7 @@ const PrincipalScreen = ({navigation}) => {
       });
     };
     fecthTickets();
+    return () => ac.abort();
   }, [data]);
 
   const estado01 = data.filter(function (ticket) {
@@ -44,6 +50,14 @@ const PrincipalScreen = ({navigation}) => {
   function goToScreen(routeName) {
     navigation.replace(routeName);
   }
+  const borrarStorage = async token => {
+    try {
+      await AsyncStorage.removeItem('token');
+      logout();
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <View style={[loginStyles.container, {padding: 50}]}>
       <StatusBar backgroundColor={color.BLUE} translucent={true} />
@@ -95,8 +109,32 @@ const PrincipalScreen = ({navigation}) => {
       )}
 
       <MyButton titulo="Ir a Preparar" onPress={() => ticketAsignados()} />
+      <View style={styles.fixToText}>
+        <Button title="Cerrar Sessión" onPress={() => borrarStorage()} />
+      </View>
     </View>
   );
 };
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    marginHorizontal: 20,
+    borderRadius: 20,
+  },
+  title: {
+    textAlign: 'center',
+    marginVertical: 8,
+  },
+  fixToText: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  separator: {
+    marginVertical: 10,
+    borderBottomColor: '#b22222',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+});
 
 export default PrincipalScreen;

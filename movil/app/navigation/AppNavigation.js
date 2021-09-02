@@ -1,3 +1,4 @@
+import React from 'react';
 import {createAppContainer} from 'react-navigation';
 import {createStackNavigator} from 'react-navigation-stack';
 import SplashScreen from '@screens/SplashScreen';
@@ -6,6 +7,7 @@ import PrincipalScreen from '@screens/PrincipalScreen';
 import TicketScreen from '@screens/TicketScreen';
 import PedidoScreen from '@screens/PedidoScreen';
 import CardTicketScreen from '@components/CardTicket';
+import {Button} from 'react-native';
 const AppNavigation = createStackNavigator({
   Splash: {
     screen: SplashScreen,
@@ -23,6 +25,13 @@ const AppNavigation = createStackNavigator({
     screen: PrincipalScreen,
     navigationOptions: {
       headerShown: false,
+      headerRight: () => {
+        <Button
+          onPress={() => alert('This is a button!')}
+          title="Info"
+          color="#00cc00"
+        />;
+      },
     },
   },
   Ticket: {
@@ -31,16 +40,16 @@ const AppNavigation = createStackNavigator({
       headerShown: false,
     },
   },
-  Pedido: {
-    screen: PedidoScreen,
-    navigationOptions: {
-      headerShown: false,
-    },
-  },
   CardTicket: {
     screen: CardTicketScreen,
     navigationOptions: {
       headerShown: false,
+    },
+  },
+  Pedido: {
+    screen: PedidoScreen,
+    navigationOptions: {
+      headerShown: true,
     },
   },
 });

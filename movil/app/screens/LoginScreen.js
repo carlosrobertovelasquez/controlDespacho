@@ -10,10 +10,10 @@ import AsyncStorage from '@react-native-community/async-storage';
 import {setToken, getToken} from '@recursos/token';
 import useAuth from '@hooks/useAuth';
 const LoginScreen = ({navigation}) => {
-  const {setUser} = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [hidePassword, setHidePassword] = useState(true);
+  const {setUser} = useAuth();
 
   const iniciarSesion = async () => {
     var url = ServerApi;
@@ -24,8 +24,9 @@ const LoginScreen = ({navigation}) => {
       } else {
         try {
           const {token} = resp.data;
+
           guardarStorage(token);
-          //setToken(token);
+          setToken(token);
           setUser(token);
           goToScreen('Principal');
         } catch (error) {

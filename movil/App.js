@@ -31,6 +31,7 @@ function App() {
     [auth],
   );
   if (auth === undefined) return null;
+
   return (
     <AuthContext.Provider value={authData}>
       <AppNavigation />

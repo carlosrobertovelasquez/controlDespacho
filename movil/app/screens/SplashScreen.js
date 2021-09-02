@@ -39,17 +39,16 @@ const SplashScreen = ({navigation}) => {
     </View>
   );
   async function fecthSesion() {
-    if (token === null) {
+    if (!token) {
       setTimeout(() => {
         goToScreen('Login');
-      }, 5000);
+      }, 3000);
       return;
     }
     setTimeout(() => {
       goToScreen('Principal');
-    }, 5000);
+    }, 500);
   }
-
   function goToScreen(routeName) {
     navigation.replace(routeName);
   }
