@@ -1,0 +1,7 @@
+Creado por :Carlos Velasquez
+Fecha :20-08-2021
+Caso# 1
+Se actualiza los cambios de estado para los pedido y se realizan que campo de actualizacion de pedidos este en los globales para que desde ahi se cambie el campo donde se requiere eso en  ticket controles igual se crea el query de actualizacion en tickets.querys.js 
+-Archivos actualizados
+    tickets.query.js
+    tickets.controlller.js
