@@ -15,7 +15,7 @@ import color from '@styles/colors';
 import useAuth from '@hooks/useAuth';
 import axios from 'react-native-axios';
 import {ServerApi} from '@recursos/ServerApi';
-import AsyncStorage from '@react-native-community/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {setToken, getToken} from '@recursos/token';
 const PrincipalScreen = ({navigation}) => {
   const {auth, logout, setAuth} = useAuth();
@@ -46,6 +46,9 @@ const PrincipalScreen = ({navigation}) => {
   });
   const ticketAsignados = () => {
     goToScreen('Ticket');
+  };
+  const ticketREvision = () => {
+    goToScreen('TicketR');
   };
   function goToScreen(routeName) {
     navigation.replace(routeName);
@@ -97,7 +100,10 @@ const PrincipalScreen = ({navigation}) => {
         </TouchableOpacity>
       )}
       {estado03.length > 0 ? (
-        <TouchableOpacity activeOpacity={0.8} style={mainStyles.btnMainRojo}>
+        <TouchableOpacity
+          onPress={() => ticketREvision()}
+          activeOpacity={0.8}
+          style={mainStyles.btnMainRojo}>
           <Text style={mainStyles.btntxt}>
             Ticket a Revisión : {estado03.length}
           </Text>

@@ -96,6 +96,7 @@ export const createTicketPedido = async (req, res) => {
   const { ticket, pedido } = req.body;
   const pool = await getConnection();
   //Consultamos Pedido Encabezado
+
   var fechahoy = new Date();
   for (let i = 0; i < pedido.length; i++) {
     const element = pedido[i];
@@ -174,6 +175,14 @@ export const createTicketPedido = async (req, res) => {
         .input("idTicket", sql.VarChar(50), ticket)
         .input("pedido", sql.VarChar(50), element.pedidos)
         .query(queriesTicket.updateTablaPedido);
+      //Ponemos cantidad a Facturar a 0 en tabla de sofrland
+
+      await pool
+        .request()
+        .input("pedido", sql.VarChar(50), element.pedidos)
+        .query(
+          `UPDATE ${Global.BASE_DATOS}.${Global.EMPRESA}.PEDIDO_LINEA set CANTIDAD_A_FACTURA=0 where PEDIDO=@pedido`
+        );
     } catch (error) {
       res.status(500);
       res.send(error.message);
@@ -277,6 +286,16 @@ export const cambioEstado = async (req, res) => {
           .input("pedido", sql.VarChar, element.pedido)
           .input("estado", sql.VarChar, "Preparado")
           .query(queriesTicket.updateTablaPedidoEstado);
+        // recorremos tickets_detalle_productos
+        // const result2 = await pool
+        //   .request()
+        //   .input("id", id)
+        //   .query(
+        //     ` select * from Despacho.dbo.tickets_detalle_productos where ticket=@id order by pedido,pedido_linea`
+        //   );
+        // res.send(result2.recordset);
+        // const datos2 = result2.recordset;
+        // console.log(datos2);
       }
     } catch (error) {
       res.status(500);
@@ -380,13 +399,12 @@ export const getTicketsPreparador = async (req, res) => {
 export const getListaTicketsPreparador = async (req, res) => {
   const { id } = req.params;
   const { estado } = req.body;
-
   try {
     const pool = await getConnection();
     const result = await pool
       .request()
       .input("idPreparador", id)
-      .input("estado", "01")
+      .input("estado", estado)
       .query(
         `select * from despacho.dbo.tickets where estado=@estado and preparador=@idPreparador`
       );
@@ -404,9 +422,149 @@ export const getPreparoTicketid = async (req, res) => {
     const pool = await getConnection();
     const result = await pool
       .request()
-      .input("idticket", id)
+      .input("idTicket", id)
       .query(queriesTicket.getPreparoTicketid);
     res.send(result.recordset);
+  } catch (error) {
+    res.status(500);
+    res.send(error.message);
+  }
+};
+
+export const getInsertPrepraro = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const pool = await getConnection();
+    const result = await pool
+      .request()
+      .input("idticket", id)
+      .query(queriesTicket.getInsertPrepraro);
+    res.json({
+      success: true,
+      message: "Se Ejecuto con exito",
+      datos: result,
+    });
+  } catch (error) {
+    res.status(500);
+    res.send(error.message);
+  }
+};
+export const getRevisoTicketid = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const pool = await getConnection();
+    const result = await pool
+      .request()
+      .input("idTicket", id)
+      .query(queriesTicket.getRevisoTicketid);
+    res.send(result.recordset);
+  } catch (error) {
+    res.status(500);
+    res.send(error.message);
+  }
+};
+export const getInsertReviso = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const pool = await getConnection();
+    const result = await pool
+      .request()
+      .input("idticket", id)
+      .query(queriesTicket.getInsertRevision);
+    res.json({
+      success: true,
+      message: "Se Ejecuto con exito",
+      datos: result,
+    });
+  } catch (error) {
+    res.status(500);
+    res.send(error.message);
+  }
+};
+
+export const getUpdatePrepraro = async (req, res) => {
+  const { cantidad, ticket, articulo } = req.body;
+  try {
+    const pool = await getConnection();
+    await pool
+      .request()
+      .input("cantidad", sql.Numeric, cantidad)
+      .input("ticket", sql.VarChar, ticket)
+      .input("articulo", sql.VarChar, articulo)
+      .query(
+        `update Despacho.dbo.preparo set cantidadPreparada=@cantidad,preparada=1 where ticket=@ticket and articulo=@articulo`
+      );
+    res.json({
+      success: true,
+      message: "Todos los Tickets",
+    });
+    //Revisamos si todos los articulos han sido contados para cambio de estado el ticket
+
+    const registros = await pool
+      .request()
+      .input("ticket", sql.VarChar, ticket)
+      .query(
+        `select count(ticket) as total from Despacho.dbo.preparo where ticket=@ticket  and preparada=0`
+      );
+
+    const datos = registros.recordset[0];
+    const { total } = datos;
+
+    if (total === 0) {
+      await pool
+        .request()
+        .input("ticket", sql.VarChar, ticket)
+        .query(
+          `update despacho.dbo.tickets set estado='03'  where ticket=@ticket `
+        );
+    }
+  } catch (error) {
+    res.status(500);
+    res.send(error.message);
+  }
+};
+export const getUpdateReviso = async (req, res) => {
+  const { cantidad, ticket, articulo, pedido, linea } = req.body;
+  try {
+    const pool = await getConnection();
+    await pool
+      .request()
+      .input("cantidad", sql.Numeric, cantidad)
+      .input("ticket", sql.VarChar, ticket)
+      .input("articulo", sql.VarChar, articulo)
+      .input("pedido", sql.VarChar, pedido)
+      .input("linea", sql.VarChar, linea)
+      .query(
+        `update Despacho.dbo.reviso set cantidadRevisada=@cantidad,reviso=1 
+        where ticket=@ticket and articulo=@articulo and pedido=@pedido and pedidoLinea=@linea`
+      );
+    res.json({
+      success: true,
+      message: "Todos los Tickets",
+    });
+    //Revisamos si todos los articulos han sido contados para cambio de estado el ticket
+
+    const registros = await pool
+      .request()
+      .input("ticket", sql.VarChar, ticket)
+      .query(
+        `select count(ticket) as total from Despacho.dbo.reviso where ticket=@ticket  and reviso=0`
+      );
+
+    const datos = registros.recordset[0];
+    const { total } = datos;
+
+    if (total === 0) {
+      await pool
+        .request()
+        .input("ticket", sql.VarChar, ticket)
+        .query(
+          `update despacho.dbo.tickets set estado='04'  where ticket=@ticket `
+        );
+    }
   } catch (error) {
     res.status(500);
     res.send(error.message);

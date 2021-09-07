@@ -3,7 +3,7 @@ import {View, StatusBar} from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import {splashStyles} from '@styles/styles';
 import useAuth from '@hooks/useAuth';
-import AsyncStorage from '@react-native-community/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const SplashScreen = ({navigation}) => {
   const {setUser} = useAuth();
   const [token, setToken] = useState('');

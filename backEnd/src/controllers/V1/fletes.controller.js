@@ -2,6 +2,7 @@ import { pool } from "mssql";
 import { getConnection, sql, queriesFletes } from "../../database";
 import dateTime from "node-datetime";
 import Moment from "moment";
+import moment from "moment";
 
 export const getMaxFlete = async (req, res) => {
   try {
@@ -31,8 +32,10 @@ export const createFlete = async (req, res) => {
   ) {
     return res.status(400).json({ msg: "FALTA INGRESO DE DATOS" });
   }
-
-  var fechahoy = new Date();
+  moment.locale("es");
+  const hoy = Date.now();
+  const hoy1 = moment(hoy).format("YYYY-MM-DD hh:mm A");
+  var fechahoy = hoy1;
   const pool = await getConnection();
   //Consultamos correlativo de ticket
   const result = await pool

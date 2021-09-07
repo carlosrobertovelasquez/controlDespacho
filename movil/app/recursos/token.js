@@ -1,6 +1,6 @@
 import jwtDecode from 'jwt-decode';
 import {TOKEN} from './constants';
-import AsyncStorage from '@react-native-community/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export function setToken(token) {
   AsyncStorage.setItem('token', token);

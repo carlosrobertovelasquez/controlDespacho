@@ -77,16 +77,20 @@ export const queriesTicket = {
   /*Fletes*/
   /*Liquidaciones*/
   updateTablaPedido: `UPDATE ${Global.BASE_DATOS}.${Global.EMPRESA}.pedido set ${Global.RUBROFLETE}='Ticket='+@idTicket,estado='A' where pedido=@pedido`,
+  updateTablaPedidoSoftland: `update ${Global.BASE_DATOS}.${Global.EMPRESA}.pedido_linea set cantidad_a_factura=0, where pedido=@pedido`,
   updateTablaPedidoEstado: `UPDATE ${Global.BASE_DATOS}.${Global.EMPRESA}.pedido set ${Global.RUBROESTADO}=@estado where pedido=@pedido`,
   getPedidosTicketId: `select * from despacho.dbo.tickets_detalle_pedidos where id_ticket=@id`,
   /*Movil*/
   getTicketPreparador: `select  *
   from Despacho.dbo.tickets where preparador=@idPreparador `,
   getListaTickerPorPreparador: `select * from despacho.dbo.tickets where estado=@estado and preparador=@idPreparador`,
-  getPreparoTicketid: `select pl.id, pl.PEDIDO_LINEA, pl.PEDIDO, pl.LOTE, pl.BODEGA,
-  pl.ARTICULO,
+  getPreparoTicketid: `select * from Despacho.dbo.preparo where ticket=@idTicket and preparada=0`,
+  getRevisoTicketid: `select * from Despacho.dbo.reviso where ticket=@idTicket and reviso=0`,
+  getInsertPrepraro: `insert into despacho.dbo.preparo(ticket,ubicacion,lote,bodega,articulo,codigoBarrasInvt,codigoBarrasVent,cantidad,descripcion) 
+select pl.ticket, pl.ubicacion, pl.LOTE, pl.BODEGA,
+  pl.ARTICULO,art.CODIGO_BARRAS_INVT,art.CODIGO_BARRAS_VENT,
   sum((pl.CANTIDAD_A_FACTURAr+pl.CANTIDAD_BONIFICAD)) CANTIDAD,
-  art.DESCRIPCION,pl.cantidadPreparada
+  art.DESCRIPCION
               from 
               Despacho.dbo.tickets_detalle_pedidos tdp,
               SOFTLAND.C01.ARTICULO art,
@@ -94,6 +98,20 @@ export const queriesTicket = {
               where 
               pl.PEDIDO=tdp.pedido and
               pl.articulo=art.ARTICULO and
-              tdp.id_ticket=@idTicket
-              group by  pl.id, pl.PEDIDO_LINEA, pl.PEDIDO, pl.LOTE, pl.BODEGA, pl.ARTICULO, art.DESCRIPCION,pl.cantidadPreparada`,
+              tdp.id_ticket=@idTicket and not EXISTS (SELECT * FROM Despacho.dbo.preparo where ticket=@idTicket)
+              group by pl.ticket, pl.ubicacion,  pl.LOTE, pl.BODEGA, pl.ARTICULO,art.CODIGO_BARRAS_INVT,art.CODIGO_BARRAS_VENT, art.DESCRIPCION`,
+  getUpdatePrepraro: `update Despacho.dbo.preparo set cantidadPreparada=@cantidad,preparada=1 where ticket=@ticket and articulo=@articulo`,
+  getInsertRevision: `insert into despacho.dbo.reviso(pedido,pedidoLinea,ticket,ubicacion,lote,bodega,articulo,codigoBarrasInvt,codigoBarrasVent,cantidad,descripcion) 
+  select pl.pedido,pl.pedido_linea, pl.ticket, pl.ubicacion, pl.LOTE, pl.BODEGA,
+    pl.ARTICULO,art.CODIGO_BARRAS_INVT,art.CODIGO_BARRAS_VENT,
+    (pl.CANTIDAD_A_FACTURAr+pl.CANTIDAD_BONIFICAD) CANTIDAD,
+    art.DESCRIPCION
+                from 
+                Despacho.dbo.tickets_detalle_pedidos tdp,
+                SOFTLAND.C01.ARTICULO art,
+                Despacho.dbo.tickets_detalle_productos pl
+                where 
+                pl.PEDIDO=tdp.pedido and
+                pl.articulo=art.ARTICULO and
+                tdp.id_ticket=@idTicket and not EXISTS (SELECT * FROM Despacho.dbo.reviso where ticket=@idTicket)`,
 };

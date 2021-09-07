@@ -13,7 +13,6 @@ import color from '@styles/colors';
 import {ServerApi} from '@recursos/ServerApi';
 import axios from 'react-native-axios';
 import useAuth from '@hooks/useAuth';
-import moment from 'moment';
 import CardTicket from '@components/CardTicket';
 const TicketScreen = ({navigation}) => {
   const {auth} = useAuth();
@@ -23,7 +22,7 @@ const TicketScreen = ({navigation}) => {
     setIsLoading(false);
     var url = ServerApi;
     var request = `/listaTicketPreparador/${auth.idPreparador}`;
-    await axios.get(url + request, {estado: '01'}).then(resp => {
+    await axios.post(url + request, {estado: '01'}).then(resp => {
       const datos = resp.data;
       setIsLoading(true);
       setData(datos);
@@ -51,7 +50,6 @@ const TicketScreen = ({navigation}) => {
 
         <FlatList
           data={data}
-          s
           renderItem={data => (
             <CardTicket data={data} navigation={navigation} />
           )}

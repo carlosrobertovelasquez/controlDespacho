@@ -50,7 +50,6 @@ export const createNewUser = async (req, res) => {
 };
 export const login = async (req, res) => {
   const { email, password } = req.body;
-
   try {
     const pool = await getConnection();
     const result = await pool
@@ -64,7 +63,7 @@ export const login = async (req, res) => {
 
     const isOk = await bcrypt.compare(password, result.recordset[0].password);
     if (!isOk) {
-      throw { code: 404, message: "Password invalido" };
+      throw { status: 500, code: 404, message: "Password invalido" };
       //res.send({ mesaje: "Password Incorrecto" });
     }
     const expiresIn = 60 * 60;
@@ -82,7 +81,7 @@ export const login = async (req, res) => {
     );
     res.send({ token, expiresIn });
   } catch (error) {
-    // res.status(500);
+    res.status(500);
     res.send(error.message);
   }
 };

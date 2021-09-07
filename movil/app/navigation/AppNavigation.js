@@ -6,7 +6,10 @@ import LoginScreen from '@screens/LoginScreen';
 import PrincipalScreen from '@screens/PrincipalScreen';
 import TicketScreen from '@screens/TicketScreen';
 import PedidoScreen from '@screens/PedidoScreen';
+import PedidoRScreen from '@screens/PedidoRScreen';
 import CardTicketScreen from '@components/CardTicket';
+import TicketRScreen from '@screens/TicketRScreen';
+
 import {Button} from 'react-native';
 const AppNavigation = createStackNavigator({
   Splash: {
@@ -40,6 +43,12 @@ const AppNavigation = createStackNavigator({
       headerShown: false,
     },
   },
+  TicketR: {
+    screen: TicketRScreen,
+    navigationOptions: {
+      headerShown: false,
+    },
+  },
   CardTicket: {
     screen: CardTicketScreen,
     navigationOptions: {
@@ -48,6 +57,12 @@ const AppNavigation = createStackNavigator({
   },
   Pedido: {
     screen: PedidoScreen,
+    navigationOptions: {
+      headerShown: true,
+    },
+  },
+  PedidoR: {
+    screen: PedidoRScreen,
     navigationOptions: {
       headerShown: true,
     },
