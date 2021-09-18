@@ -9,7 +9,9 @@ import PedidoScreen from '@screens/PedidoScreen';
 import PedidoRScreen from '@screens/PedidoRScreen';
 import CardTicketScreen from '@components/CardTicket';
 import TicketRScreen from '@screens/TicketRScreen';
-
+import TicketPScreen from '@screens/TicketPScreen';
+import ParemScreen from '@screens/ParaScreen';
+import ListaPedido from '@screens/ListaPedido';
 import {Button} from 'react-native';
 const AppNavigation = createStackNavigator({
   Splash: {
@@ -24,35 +26,46 @@ const AppNavigation = createStackNavigator({
       headerShown: false,
     },
   },
+  Param: {
+    screen: ParemScreen,
+    navigationOptions: {
+      headerShown: false,
+    },
+  },
   Principal: {
     screen: PrincipalScreen,
     navigationOptions: {
       headerShown: false,
-      headerRight: () => {
-        <Button
-          onPress={() => alert('This is a button!')}
-          title="Info"
-          color="#00cc00"
-        />;
-      },
     },
   },
   Ticket: {
     screen: TicketScreen,
     navigationOptions: {
-      headerShown: false,
+      headerShown: true,
     },
   },
   TicketR: {
     screen: TicketRScreen,
     navigationOptions: {
-      headerShown: false,
+      headerShown: true,
+    },
+  },
+  TicketP: {
+    screen: TicketPScreen,
+    navigationOptions: {
+      headerShown: true,
     },
   },
   CardTicket: {
     screen: CardTicketScreen,
     navigationOptions: {
       headerShown: false,
+    },
+  },
+  ListaP: {
+    screen: ListaPedido,
+    navigationOptions: {
+      headerShown: true,
     },
   },
   Pedido: {

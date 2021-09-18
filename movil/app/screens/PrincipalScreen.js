@@ -17,22 +17,30 @@ import axios from 'react-native-axios';
 import {ServerApi} from '@recursos/ServerApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {setToken, getToken} from '@recursos/token';
+import moment from 'moment';
 const PrincipalScreen = ({navigation}) => {
   const {auth, logout, setAuth} = useAuth();
   const [data, setData] = useState([]);
+  const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const ac = new AbortController();
+    let mounted = true;
     var url = ServerApi;
     var request = `/getTicketsPreparador/${auth.idPreparador}`;
     const fecthTickets = async () => {
       await axios.get(url + request).then(resp => {
-        const datos = resp.data;
-        setData(datos);
+        if (mounted) {
+          const datos = resp.data;
+          setData(datos);
+        }
       });
     };
     fecthTickets();
-    return () => ac.abort();
+    return function cleanup() {
+      mounted = false;
+    };
   }, [data]);
 
   const estado01 = data.filter(function (ticket) {
@@ -44,6 +52,9 @@ const PrincipalScreen = ({navigation}) => {
   const estado03 = data.filter(function (ticket) {
     return ticket.estado === '03';
   });
+  const ticketPreparando = () => {
+    goToScreen('TicketP');
+  };
   const ticketAsignados = () => {
     goToScreen('Ticket');
   };
@@ -51,18 +62,23 @@ const PrincipalScreen = ({navigation}) => {
     goToScreen('TicketR');
   };
   function goToScreen(routeName) {
-    navigation.replace(routeName);
+    navigation.navigate(routeName);
   }
   const borrarStorage = async token => {
     try {
       await AsyncStorage.removeItem('token');
+      navigation.replace('Login');
       logout();
     } catch (error) {
       console.log(error);
     }
   };
+  if (auth.name === null) {
+    goToScreen('Login');
+  }
+
   return (
-    <View style={[loginStyles.container, {padding: 50}]}>
+    <View style={[mainStyles.container, {padding: 50}]}>
       <StatusBar backgroundColor={color.BLUE} translucent={true} />
       <Text
         style={{
@@ -86,6 +102,7 @@ const PrincipalScreen = ({navigation}) => {
       )}
       {estado02.length > 0 ? (
         <TouchableOpacity
+          onPress={() => ticketPreparando()}
           activeOpacity={0.8}
           style={mainStyles.btnMainAmarillo}>
           <Text style={mainStyles.btntxt}>

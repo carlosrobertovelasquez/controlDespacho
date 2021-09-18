@@ -148,10 +148,10 @@ android {
             keyPassword 'android'
         }
         release {
-      storeFile file('your_key_name.keystore')
-      storePassword 'your_key_store_password'
-      keyAlias 'your_key_alias'
-      keyPassword 'your_key_file_alias_password'
+      storeFile file('movil.keystore')
+      storePassword 'master#$2021'
+      keyAlias 'movil'
+      keyPassword 'master#$2021'
     }
         
     }

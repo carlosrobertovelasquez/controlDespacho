@@ -8,11 +8,11 @@ const SplashScreen = ({navigation}) => {
   const {setUser} = useAuth();
   const [token, setToken] = useState('');
   useEffect(() => {
-    fecthSesion();
     getStorage();
+    fecthSesion();
   }, []);
 
-  const getStorage = async token => {
+  const getStorage = async () => {
     try {
       const Storage = await AsyncStorage.getItem('token');
       setToken(Storage);

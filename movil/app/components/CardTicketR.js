@@ -1,19 +1,13 @@
 import React from 'react';
-import {Text, View, TouchableOpacity, Alert} from 'react-native';
-import {Card} from 'react-native-elements';
-import {loginStyles} from '@styles/styles';
+import {StyleSheet, Text, View, TouchableOpacity, Alert} from 'react-native';
 import {ServerApi} from '@recursos/ServerApi';
 import axios from 'react-native-axios';
-//import useTimeAgo from '@hooks/useTimeAgo';
 import moment from 'moment';
-const CardTicketR = props => {
-  moment.locale('es');
-  const {navigation} = props;
-  const {data} = props;
-  const fecha = moment(data.item.fecha_inicio).format('DD-MM-YYYY');
-  const Hora = moment(data.item.fecha_inicio).format('hh:mm');
-  const fechaInicio = data.item.fecha_inicio;
-  const fecha2 = Date.parse(data.item.fecha_inicio);
+const CardTicketR = ({data, navigation}) => {
+  const fecha = moment(data.fecha_inicio).format('DD-MM-YYYY');
+  const Hora = moment(data.fecha_inicio).format('hh:mm');
+  const fechaInicio = data.fecha_inicio;
+  const fecha2 = Date.parse(data.fecha_inicio);
   const diff = moment(fechaInicio || moment.now()).fromNow();
 
   const irTicket = ticket => {
@@ -34,49 +28,73 @@ const CardTicketR = props => {
     await axios.get(url + request).then(resp => {
       const datos = resp.success;
 
-      navigation.navigate('PedidoR', ticket);
+      navigation.navigate('ListaP', ticket);
     });
   };
-
   return (
     <>
-      <Card
-        containerStyle={[loginStyles.container, {backgroundColor: '#DC3545'}]}>
-        <TouchableOpacity onPress={() => irTicket(data.item.ticket)}>
-          <Card.Title containerStyle={{backgroundColor: '#ff'}}>
-            <Text
-              style={{
-                textAlign: 'center',
-                fontSize: 20,
-                fontFamily: 'Poppins-Bold',
-                color: '#ffffff',
-              }}>
-              Ticke{data.item.ticket}
-            </Text>
-          </Card.Title>
+      <TouchableOpacity onPress={() => irTicket(data.item.ticket)}>
+        <View style={styles.card}>
+          <View style={styles.cardContent}>
+            <Text style={styles.title}>Ticket: {data.item.ticket}</Text>
+          </View>
 
           <View
             style={{
               flex: 1,
               flexDirection: 'row',
+              justifyContent: 'center',
             }}>
-            <Text style={{color: '#ffffff'}}>Fecha : {fecha}</Text>
-            <Text style={{color: '#ffffff'}}> Hora : {Hora}</Text>
+            <Text style={{color: '#ffffff', alignContent: 'center'}}>
+              Fecha : {fecha}
+            </Text>
+            <Text style={{color: '#ffffff', alignContent: 'center'}}>
+              {' '}
+              Hora : {Hora}
+            </Text>
           </View>
           <View
             style={{
               flex: 1,
               flexDirection: 'row',
+              justifyContent: 'center',
+              marginBottom: 20,
             }}>
-            <Text style={{color: '#ffffff'}}>
+            <Text style={{color: '#ffffff', alignContent: 'center'}}>
               Pedidos : {data.item.cant_pedido}
             </Text>
-            <Text style={{color: '#ffffff'}}> Tiempo : {diff}</Text>
+            <Text style={{color: '#ffffff', alignContent: 'center'}}>
+              {' '}
+              Tiempo : {diff}
+            </Text>
           </View>
-        </TouchableOpacity>
-      </Card>
+        </View>
+      </TouchableOpacity>
     </>
   );
 };
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: 6,
+    elevation: 3,
+    backgroundColor: '#DC3545',
+    shadowOffset: {width: 1, height: 1},
+    shadowColor: '#333',
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    marginHorizontal: 4,
+    marginVertical: 6,
+  },
+  cardContent: {
+    marginHorizontal: 18,
+    marginVertical: 10,
+  },
+  title: {
+    textAlign: 'center',
+    fontSize: 20,
+    fontFamily: 'Poppins-Bold',
+    color: '#fff',
+  },
+});
 
 export default CardTicketR;

@@ -3,61 +3,98 @@ import {
   View,
   Text,
   StatusBar,
-  Button,
   FlatList,
-  ScrollView,
-  ActivityIndicator,
+  SafeAreaView,
+  StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 import {loginStyles, mainStyles} from '@styles/styles';
 import color from '@styles/colors';
-import {ServerApi} from '@recursos/ServerApi';
 import axios from 'react-native-axios';
 import useAuth from '@hooks/useAuth';
 import CardTicket from '@components/CardTicket';
+import {ServerApi} from '../recursos/ServerApi';
+
 const TicketScreen = ({navigation}) => {
   const {auth} = useAuth();
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  useEffect(async () => {
-    setIsLoading(false);
+
+  useEffect(() => {
+    let mounted = true;
     var url = ServerApi;
     var request = `/listaTicketPreparador/${auth.idPreparador}`;
-    await axios.post(url + request, {estado: '01'}).then(resp => {
-      const datos = resp.data;
-      setIsLoading(true);
-      setData(datos);
-    });
-  }, [data]);
-
-  const regresar = () => {
-    navigation.navigate('Principal');
-  };
+    const fecthTickets = async () => {
+      await axios.post(url + request, {estado: '01'}).then(resp => {
+        if (mounted) {
+          const datos = resp.data;
+          setData(datos);
+        }
+      });
+    };
+    fecthTickets();
+    return function cleanup() {
+      mounted = false;
+    };
+  }, [data, auth.idPreparador]);
 
   return (
-    <ScrollView>
-      <View style={[loginStyles.container, {padding: 50}]}>
-        <StatusBar backgroundColor={color.BLUE} translucent={true} />
+    <SafeAreaView>
+      <View style={styles.container}>
         <Text
           style={{
             textAlign: 'center',
-            marginTop: 20,
+            marginTop: 2,
             fontSize: 25,
             fontFamily: 'Poppins-Bold',
           }}>
           Tickets Asignados
         </Text>
-        <Button title="Regresar" onPress={() => regresar()} />
-
-        <FlatList
-          data={data}
-          renderItem={data => (
-            <CardTicket data={data} navigation={navigation} />
-          )}
-          keyExtractor={data.id}
-        />
+        <View style={styles.lista}>
+          <FlatList
+            data={data}
+            renderItem={({item}) => (
+              <CardTicket data={item} navigation={navigation} />
+            )}
+            keyExtractor={item => item.id}
+            contentContainerStyle={{paddingBottom: 100}}
+          />
+        </View>
       </View>
-    </ScrollView>
+    </SafeAreaView>
   );
 };
+const styles = StyleSheet.create({
+  container: {
+    padding: 25,
+  },
+  lista: {
+    padding: 10,
+  },
+  item: {
+    backgroundColor: '#f9c2ff',
+    padding: 20,
+    marginVertical: 8,
+    marginHorizontal: 16,
+  },
+  title: {
+    fontSize: 32,
+  },
+  card: {
+    borderRadius: 6,
+    elevation: 3,
+    backgroundColor: '#fff',
+    shadowOffset: {width: 1, height: 1},
+    shadowColor: '#333',
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    marginHorizontal: 4,
+    marginVertical: 6,
+  },
+  cardContent: {
+    marginHorizontal: 18,
+    marginVertical: 10,
+  },
+});
 
 export default TicketScreen;
