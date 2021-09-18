@@ -65,13 +65,27 @@ export const getVehiculoById = async (req, res) => {
 
 export const deleteVehiculo = async (req, res) => {
   const { id } = req.params;
+  //Validamos si esta relacionado en un flete
   try {
     const pool = await getConnection();
     const result = await pool
       .request()
       .input("Id", id)
-      .query(queriesVehiculos.deleteVehiculo);
-    res.send(result);
+      .query(
+        `select * from despacho.dbo.vehiculos where id in (select vehiculo_id from Despacho.dbo.fletes where vehiculo_id=@Id) `
+      );
+    if (result.recordset[0]) {
+      return res.json({
+        success: false,
+        message: "El Vehiculo No se puede Elinimar Tiene asignado Fletes",
+      });
+    } else {
+      await pool
+        .request()
+        .input("Id", sql.VarChar, id)
+        .query(queriesVehiculos.deleteVehiculo);
+      res.json({ success: true, message: "Se Elimino con Exito" });
+    }
   } catch (error) {
     res.status(500);
     res.send(error.message);

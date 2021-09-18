@@ -7,6 +7,7 @@ import {
   deleteUser,
   updateUser,
   login,
+  updatePassword,
 } from "../../controllers/V1/users.controller";
 import { checkAuth } from "../../Middlewares/auth-middleware";
 import { handleRequestErrors } from "../../Middlewares/validator-middleware";
@@ -19,6 +20,7 @@ router.post("/api/v1/users", createNewUser);
 router.get("/api/v1/users", getUsers);
 router.get("/api/v1/users/:id", getUserById);
 router.delete("/api/v1/users/:id", checkAuth, deleteUser);
-router.put("/api/v1/users/:id", checkAuth, updateUser);
+router.put("/api/v1/users/:id", updateUser);
+router.put("/api/v1/user/:id", updatePassword);
 
 export default router;

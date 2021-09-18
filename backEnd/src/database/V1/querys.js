@@ -5,13 +5,13 @@ export const queries = {
   getAllUsers: ` SELECT id ,name,email, 
     iif(Rol='dbo','USUARIO','ADMINISTRADOR') as Rol, 
     iif(active='1','ACTIVO','INACTIVO') as active,
-    created_at,updated_at FROM Despacho.dbo.users`,
+    created_at,updated_at,idPreparador FROM Despacho.dbo.users`,
   createNewUser:
     "INSERT INTO Despacho.dbo.users (name,email,password) values(@name,@email,@password)",
   getUserById: "SELECT * FROM DESPACHO.DBO.USERS WHERE id=@Id ",
   deleteUser: "DELETE DESPACHO.DBO.USERS WHERE ID=@Id",
   updateUser:
-    "UPDATE DESPACHO.DBO.USERS SET name=@name,email=@email,password=@password WHERE id=@Id",
+    "UPDATE DESPACHO.DBO.USERS SET name=@name,rol=@rol,active=@active,idPreparador=@idPreparador WHERE id=@Id",
   login: "SELECT  * FROM DESPACHO.DBO.USERS WHERE email=@email ",
   /*VEHICULOS*/
   getAllVehiculo: "SELECT * FROM DESPACHO.DBO.VEHICULOS",

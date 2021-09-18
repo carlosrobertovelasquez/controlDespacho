@@ -2,6 +2,7 @@ import { pool } from "mssql";
 import { getConnection, sql, queries } from "../../database";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { response } from "express";
 
 export const getUsers = async (req, res) => {
   try {
@@ -50,6 +51,7 @@ export const createNewUser = async (req, res) => {
 };
 export const login = async (req, res) => {
   const { email, password } = req.body;
+
   try {
     const pool = await getConnection();
     const result = await pool
@@ -57,14 +59,14 @@ export const login = async (req, res) => {
       .input("email", email.toLowerCase())
       .query(queries.login);
     if (!result.recordset[0]) {
-      throw { code: 404, message: "Correo no Existe" };
-      //res.send({ mesaje: "Correo No existe" });
+      throw { status: 500, code: 404, message: "Password invalido" };
+      res.send({ mesaje: "Error en Correo" });
     }
 
     const isOk = await bcrypt.compare(password, result.recordset[0].password);
     if (!isOk) {
       throw { status: 500, code: 404, message: "Password invalido" };
-      //res.send({ mesaje: "Password Incorrecto" });
+      res.send({ mesaje: "Password Incorrecto" });
     }
     const expiresIn = 60 * 60;
     const token = jwt.sign(
@@ -82,7 +84,11 @@ export const login = async (req, res) => {
     res.send({ token, expiresIn });
   } catch (error) {
     res.status(500);
-    res.send(error.message);
+    res.json({
+      success: false,
+      error: error.message,
+    });
+    //res.send(error.message);
   }
 };
 
@@ -119,19 +125,35 @@ export const deleteUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { name, email, password } = req.body;
-  if (name == null || email == null || password == null) {
-    return res.status(400).json({ msg: "Bad Request. Please Fill all fields" });
-  }
-
+  const { name, rol, active, idPreparador } = req.body;
   const pool = await getConnection();
-
   await pool
     .request()
     .input("name", sql.VarChar, name)
-    .input("email", sql.VarChar, email)
-    .input("password", sql.VarChar, password)
-    .input("Id", id)
-    .query(queries.updateUser);
-  res.json({ name, email });
+    .input("rol", sql.VarChar, rol)
+    .input("active", sql.VarChar, active)
+    .input("idPreparador", sql.VarChar, idPreparador)
+    .input("Id", id).query(`UPDATE DESPACHO.DBO.USERS 
+    SET name=@name,
+    rol=@rol,
+    active=@active,
+    idPreparador=@idPreparador WHERE id=@Id`);
+  res.json({
+    success: true,
+    message: "Se Actualizo con exito",
+  });
+};
+export const updatePassword = async (req, res) => {
+  const { id } = req.params;
+  const { password } = req.body;
+  const hash = await bcrypt.hash(password, 15);
+  const pool = await getConnection();
+  await pool.request().input("hash", sql.VarChar, hash).input("Id", id)
+    .query(`UPDATE DESPACHO.DBO.USERS
+     SET password=@hash
+    WHERE id=@Id`);
+  res.json({
+    success: true,
+    message: "Se Actualizo con exito",
+  });
 };

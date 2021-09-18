@@ -21,7 +21,7 @@ export const getTicketTodos = async (req, res) => {
   try {
     const pool = await getConnection();
     const result = await pool.request().query(
-      `  select estado=CASE ti.estado when '01' then 'IR A PREPARAR' when '02' then 'PREPARANDO' when '03' then 'REVISADO'when '04' then 'CERRADO' END ,ti.estado,ti.ticket,ti.fecha_inicio,fecha_inicio_preparacion,fecha_fin_preparacion,fecha_fin_preparacion,
+      `  select estado=CASE ti.estado when '01' then 'IR A PREPARAR' when '02' then 'PREPARANDO' when '03' then 'REVISADO'when '04' then 'CERRADO' END ,ti.estado,ti.ticket,ti.fecha_inicio,fecha_inicio_preparacion,fecha_fin_preparacion,
         ti.ubicacion,ti.preparador,ayu.nombre,ti.cant_pedido 
         from despacho.dbo.tickets ti,despacho.dbo.ayudantes ayu where ti.preparador=ayu.id `
     );
@@ -121,7 +121,7 @@ export const createTicketPedido = async (req, res) => {
         .input("nota", sql.VarChar(300), dato.nota)
         .input("ubicacion", sql.VarChar(50), dato.ubicacion)
         .query(
-          "INSERT INTO Despacho.dbo.tickets_detalle_pedidos(id_ticket,pedido,cliente,nombre,direccion,monto,estado,vendedor,nombre_vendedor,nota,ubicacion) values(@idTicket,@pedido,@cliente,@nombre,@direccion,@monto,@estado,@vendedor,@nombrevendedor,@nota,@ubicacion)"
+          "INSERT INTO Despacho.dbo.tickets_detalle_pedidos(id_ticket,pedido,cliente,nombre,direccion,monto,estado,vendedor,nombre_vendedor,nota,ubicacion,revisado) values(@idTicket,@pedido,@cliente,@nombre,@direccion,@monto,@estado,@vendedor,@nombrevendedor,@nota,@ubicacion,'N')"
         );
 
       //insertamos en la tabla de ticketesdetalleproductos
@@ -224,7 +224,7 @@ export const cambioEstado = async (req, res) => {
         await pool
           .request()
           .input("pedido", sql.VarChar, element.pedido)
-          .input("estado", sql.VarChar, "Preparando")
+          .input("estado", sql.VarChar, "Alistando")
           .query(queriesTicket.updateTablaPedidoEstado);
       }
     } catch (error) {
@@ -254,7 +254,7 @@ export const cambioEstado = async (req, res) => {
         await pool
           .request()
           .input("pedido", sql.VarChar, element.pedido)
-          .input("estado", sql.VarChar, "En Revision")
+          .input("estado", sql.VarChar, "Revisando")
           .query(queriesTicket.updateTablaPedidoEstado);
       }
     } catch (error) {
@@ -286,16 +286,6 @@ export const cambioEstado = async (req, res) => {
           .input("pedido", sql.VarChar, element.pedido)
           .input("estado", sql.VarChar, "Preparado")
           .query(queriesTicket.updateTablaPedidoEstado);
-        // recorremos tickets_detalle_productos
-        // const result2 = await pool
-        //   .request()
-        //   .input("id", id)
-        //   .query(
-        //     ` select * from Despacho.dbo.tickets_detalle_productos where ticket=@id order by pedido,pedido_linea`
-        //   );
-        // res.send(result2.recordset);
-        // const datos2 = result2.recordset;
-        // console.log(datos2);
       }
     } catch (error) {
       res.status(500);
@@ -303,7 +293,32 @@ export const cambioEstado = async (req, res) => {
     }
   }
 };
-
+export const getActualizacionPedido = async (req, res) => {
+  const { id } = req.params;
+  // recorremos tickets_detalle_productos
+  const pool = await getConnection();
+  const result2 = await pool
+    .request()
+    .input("id", id)
+    .query(
+      ` select * from Despacho.dbo.tickets_detalle_productos where ticket=@id order by pedido,pedido_linea`
+    );
+  const datos2 = result2.recordset;
+  //Recorrenos el array para actualizar en softlandERP
+  for (let i = 0; i < datos2.length; i++) {
+    const element = datos2[i];
+    await pool
+      .request()
+      .input("pedido", sql.VarChar, element.pedido)
+      .input("pedidoLinea", sql.VarChar, element.pedido_linea)
+      .input("articulo", sql.VarChar, element.articulo)
+      .input("cantidadAFacturar", sql.Decimal, element.cantidad_a_facturar)
+      .query(`update ${Global.BASE_DATOS}.${Global.EMPRESA}.pedido_linea
+      set cantidad_a_factura=@cantidadAFacturar
+      where pedido=@pedido and pedido_linea=@pedidoLinea and
+      articulo=@articulo`);
+  }
+};
 //Buscamos en la tabla TickePedido para saber el detalle de pedidos en el ticket
 export const getTicketDetallePedidoById = async (req, res) => {
   const { id } = req.params;
@@ -313,7 +328,7 @@ export const getTicketDetallePedidoById = async (req, res) => {
       .request()
       .input("Id", id)
       .query(
-        "select * from despacho.dbo.tickets_detalle_pedidos where id_ticket=@Id"
+        `select * from despacho.dbo.tickets_detalle_pedidos where id_ticket=@Id and revisado='N'`
       );
     res.send(result.recordset);
   } catch (error) {
@@ -452,12 +467,14 @@ export const getInsertPrepraro = async (req, res) => {
 };
 export const getRevisoTicketid = async (req, res) => {
   const { id } = req.params;
+  const { pedido } = req.query;
 
   try {
     const pool = await getConnection();
     const result = await pool
       .request()
       .input("idTicket", id)
+      .input("pedido", pedido)
       .query(queriesTicket.getRevisoTicketid);
     res.send(result.recordset);
   } catch (error) {
@@ -487,6 +504,8 @@ export const getInsertReviso = async (req, res) => {
 
 export const getUpdatePrepraro = async (req, res) => {
   const { cantidad, ticket, articulo } = req.body;
+  const date = new Date();
+  const d = Moment(date).format();
   try {
     const pool = await getConnection();
     await pool
@@ -494,8 +513,9 @@ export const getUpdatePrepraro = async (req, res) => {
       .input("cantidad", sql.Numeric, cantidad)
       .input("ticket", sql.VarChar, ticket)
       .input("articulo", sql.VarChar, articulo)
+      .input("hoy", sql.DateTime, d)
       .query(
-        `update Despacho.dbo.preparo set cantidadPreparada=@cantidad,preparada=1 where ticket=@ticket and articulo=@articulo`
+        `update Despacho.dbo.preparo set cantidadPreparada=@cantidad,preparada=1,finPreparacion=@hoy where ticket=@ticket and articulo=@articulo`
       );
     res.json({
       success: true,
@@ -539,7 +559,7 @@ export const getUpdateReviso = async (req, res) => {
       .input("linea", sql.VarChar, linea)
       .query(
         `update Despacho.dbo.reviso set cantidadRevisada=@cantidad,reviso=1 
-        where ticket=@ticket and articulo=@articulo and pedido=@pedido and pedidoLinea=@linea`
+        where ticket=@ticket and articulo=@articulo and pedido=@pedido and reviso_id=@linea`
       );
     res.json({
       success: true,
@@ -564,6 +584,93 @@ export const getUpdateReviso = async (req, res) => {
         .query(
           `update despacho.dbo.tickets set estado='04'  where ticket=@ticket `
         );
+      //aqui recorremos para actualizar cantidad a facturar softlandeERP
+
+      const result2 = await pool
+        .request()
+        .input("id", ticket)
+        .query(
+          ` select * from Despacho.dbo.tickets_detalle_productos where ticket=@id order by pedido,pedido_linea`
+        );
+      const datos2 = result2.recordset;
+      //Recorrenos el array para actualizar en softlandERP
+      for (let i = 0; i < datos2.length; i++) {
+        const element = datos2[i];
+        await pool
+          .request()
+          .input("pedido", sql.VarChar, element.pedido)
+          .input("pedidoLinea", sql.VarChar, element.pedido_linea)
+          .input("articulo", sql.VarChar, element.articulo)
+          .input("cantidadAFacturar", sql.Decimal, element.cantidad_a_facturar)
+          .query(`update ${Global.BASE_DATOS}.${Global.EMPRESA}.pedido_linea
+    set cantidad_a_factura=@cantidadAFacturar
+    where pedido=@pedido and pedido_linea=@pedidoLinea and
+    articulo=@articulo`);
+      }
+    }
+  } catch (error) {
+    res.status(500);
+    res.send(error.message);
+  }
+};
+export const getUpdateTicketReviso = async (req, res) => {
+  const { ticket, pedido } = req.body;
+  try {
+    const pool = await getConnection();
+    await pool
+      .request()
+      .input("ticket", sql.VarChar, ticket)
+      .input("pedido", sql.VarChar, pedido)
+      .query(
+        `update Despacho.dbo.tickets_detalle_pedidos set revisado='S'
+        where id_ticket=@ticket  and pedido=@pedido`
+      );
+    res.json({
+      success: false,
+      message: "Se actualizo con Exito",
+    });
+    //Revisamos si todos los articulos han sido contados para cambio de estado el ticket
+
+    const registros = await pool
+      .request()
+      .input("ticket", sql.VarChar, ticket)
+      .query(
+        `select count(ticket) as total from Despacho.dbo.reviso where ticket=@ticket  and reviso=0`
+      );
+
+    const datos = registros.recordset[0];
+    const { total } = datos;
+
+    if (total === 0) {
+      await pool
+        .request()
+        .input("ticket", sql.VarChar, ticket)
+        .query(
+          `update despacho.dbo.tickets set estado='04'  where ticket=@ticket `
+        );
+      //aqui recorremos para actualizar cantidad a facturar softlandeERP
+
+      const result2 = await pool
+        .request()
+        .input("id", ticket)
+        .query(
+          ` select * from Despacho.dbo.tickets_detalle_productos where ticket=@id order by pedido,pedido_linea`
+        );
+      const datos2 = result2.recordset;
+      //Recorrenos el array para actualizar en softlandERP
+      for (let i = 0; i < datos2.length; i++) {
+        const element = datos2[i];
+        await pool
+          .request()
+          .input("pedido", sql.VarChar, element.pedido)
+          .input("pedidoLinea", sql.VarChar, element.pedido_linea)
+          .input("articulo", sql.VarChar, element.articulo)
+          .input("cantidadAFacturar", sql.Decimal, element.cantidad_a_facturar)
+          .query(`update ${Global.BASE_DATOS}.${Global.EMPRESA}.pedido_linea
+    set cantidad_a_factura=@cantidadAFacturar
+    where pedido=@pedido and pedido_linea=@pedidoLinea and
+    articulo=@articulo`);
+      }
     }
   } catch (error) {
     res.status(500);

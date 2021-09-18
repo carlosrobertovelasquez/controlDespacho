@@ -34,9 +34,9 @@ export const queriesTicket = {
   getMaxTicket: "select max(ticket) as maximo from despacho.dbo.tickets",
   //Crear Ticket
   crearTicket: `insert into Despacho.dbo.tickets(ticket,preparador,estado,cant_pedido,fecha_inicio,ubicacion,created_at)values(@Nticket,@preparador,@estado,@cantPedido,@fechaInicio,@ubicacion,@createAt)`,
-  createTicketPedido: `insert into Despacho.dbo.tickets_detalle_pedido(id_ticket,pedido,cliente,nombre,direccion,monto,estado,vendedor,nombre_vendedor,nota,ubicacion) values(@Ticket,@pedido,@cliente,@nombre,@direccion,@monto,@estado,@vendedor,@nombreVendedor,@nota,@ubicacion)`,
+  createTicketPedido: `insert into Despacho.dbo.tickets_detalle_pedido(id_ticket,pedido,cliente,nombre,direccion,monto,estado,vendedor,nombre_vendedor,nota,ubicacion,revisado) values(@Ticket,@pedido,@cliente,@nombre,@direccion,@monto,@estado,@vendedor,@nombreVendedor,@nota,@ubicacion,'N')`,
   getQTicketProductos: `SELECT dp.id,dp.ticket,dp.pedido,dp.pedido_linea,dp.bodega,dp.lote,dp.articulo,art.DESCRIPCION,dp.cantidad_pedida,dp.cantidad_a_facturar,dp.cantidad_bonificad,dp.ubicacion FROM Despacho.DBO.tickets_detalle_productos dp,${Global.BASE_DATOS}.${Global.EMPRESA}.ARTICULO art WHERE dp.articulo=art.ARTICULO and ticket=@Id order by dp.pedido`,
-  getQTicketImpresionConLote: `select pl.BODEGA,pl.ARTICULO,pl.LOTE,sum((pl.CANTIDAD_A_FACTURA+pl.CANTIDAD_BONIFICAD)) CANTIDAD,pl.PEDIDO,art.DESCRIPCION, CONVERT(VARCHAR(10),lt.FECHA_VENCIMIENTO, 103) as  FECHA_VENCIMIENTO from 
+  getQTicketImpresionConLote: `select pl.BODEGA,pl.ARTICULO,pl.LOTE,sum((pl.CANTIDAD_PEDIDA+pl.CANTIDAD_BONIFICAD)) CANTIDAD,pl.PEDIDO,art.DESCRIPCION, CONVERT(VARCHAR(10),lt.FECHA_VENCIMIENTO, 103) as  FECHA_VENCIMIENTO from 
               Despacho.dbo.tickets_detalle_pedidos tdp,
               ${Global.BASE_DATOS}.${Global.EMPRESA}.ARTICULO art,
               ${Global.BASE_DATOS}.${Global.EMPRESA}.PEDIDO_LINEA pl,
@@ -52,7 +52,7 @@ export const queriesTicket = {
   `,
   getQTicketImpresionSinLote: `select pl.BODEGA,
   pl.ARTICULO,
-  sum((pl.CANTIDAD_A_FACTURA+pl.CANTIDAD_BONIFICAD)) CANTIDAD,
+  sum((pl.CANTIDAD_PEDIDA+pl.CANTIDAD_BONIFICAD)) CANTIDAD,
   pl.PEDIDO,
   art.DESCRIPCION
               from 
@@ -85,30 +85,30 @@ export const queriesTicket = {
   from Despacho.dbo.tickets where preparador=@idPreparador `,
   getListaTickerPorPreparador: `select * from despacho.dbo.tickets where estado=@estado and preparador=@idPreparador`,
   getPreparoTicketid: `select * from Despacho.dbo.preparo where ticket=@idTicket and preparada=0`,
-  getRevisoTicketid: `select * from Despacho.dbo.reviso where ticket=@idTicket and reviso=0`,
-  getInsertPrepraro: `insert into despacho.dbo.preparo(ticket,ubicacion,lote,bodega,articulo,codigoBarrasInvt,codigoBarrasVent,cantidad,descripcion) 
+  getRevisoTicketid: `select * from Despacho.dbo.reviso where ticket=@idTicket and pedido=@pedido and reviso=0 order by pedidoLinea `,
+  getInsertPrepraro: `insert into despacho.dbo.preparo(ticket,ubicacion,lote,bodega,articulo,codigoBarrasInvt,codigoBarrasVent,cantidad,descripcion,manufacturador,articuloDelProveedor,inicioPreparacion) 
 select pl.ticket, pl.ubicacion, pl.LOTE, pl.BODEGA,
   pl.ARTICULO,art.CODIGO_BARRAS_INVT,art.CODIGO_BARRAS_VENT,
-  sum((pl.CANTIDAD_A_FACTURAr+pl.CANTIDAD_BONIFICAD)) CANTIDAD,
-  art.DESCRIPCION
+  sum((pl.CANTIDAD_PEDIDA+pl.CANTIDAD_BONIFICAD)) CANTIDAD,
+  art.DESCRIPCION,art.MANUFACTURADOR,ARTICULO_DEL_PROV,GETDATE() as fechai
               from 
               Despacho.dbo.tickets_detalle_pedidos tdp,
-              SOFTLAND.C01.ARTICULO art,
+              ${Global.BASE_DATOS}.${Global.EMPRESA}.ARTICULO art,
               Despacho.dbo.tickets_detalle_productos pl
               where 
               pl.PEDIDO=tdp.pedido and
               pl.articulo=art.ARTICULO and
               tdp.id_ticket=@idTicket and not EXISTS (SELECT * FROM Despacho.dbo.preparo where ticket=@idTicket)
-              group by pl.ticket, pl.ubicacion,  pl.LOTE, pl.BODEGA, pl.ARTICULO,art.CODIGO_BARRAS_INVT,art.CODIGO_BARRAS_VENT, art.DESCRIPCION`,
-  getUpdatePrepraro: `update Despacho.dbo.preparo set cantidadPreparada=@cantidad,preparada=1 where ticket=@ticket and articulo=@articulo`,
-  getInsertRevision: `insert into despacho.dbo.reviso(pedido,pedidoLinea,ticket,ubicacion,lote,bodega,articulo,codigoBarrasInvt,codigoBarrasVent,cantidad,descripcion) 
+              group by pl.ticket, pl.ubicacion,  pl.LOTE, pl.BODEGA, pl.ARTICULO,art.CODIGO_BARRAS_INVT,art.CODIGO_BARRAS_VENT, art.DESCRIPCION,art.MANUFACTURADOR,art.ARTICULO_DEL_PROV`,
+  getUpdatePrepraro: `update Despacho.dbo.preparo set cantidadPreparada=@cantidad,preparada=1,finPreparacion=@hoy where ticket=@ticket and articulo=@articulo`,
+  getInsertRevision: `insert into despacho.dbo.reviso(pedido,pedidoLinea,ticket,ubicacion,lote,bodega,articulo,codigoBarrasInvt,codigoBarrasVent,cantidad,descripcion,manufacturador,articuloDelProveedor,inicioRevision) 
   select pl.pedido,pl.pedido_linea, pl.ticket, pl.ubicacion, pl.LOTE, pl.BODEGA,
     pl.ARTICULO,art.CODIGO_BARRAS_INVT,art.CODIGO_BARRAS_VENT,
-    (pl.CANTIDAD_A_FACTURAr+pl.CANTIDAD_BONIFICAD) CANTIDAD,
-    art.DESCRIPCION
+    (pl.CANTIDAD_PEDIDA+pl.CANTIDAD_BONIFICAD) CANTIDAD,
+    art.DESCRIPCION,art.MANUFACTURADOR,ARTICULO_DEL_PROV,GETDATE() as fechai
                 from 
                 Despacho.dbo.tickets_detalle_pedidos tdp,
-                SOFTLAND.C01.ARTICULO art,
+                ${Global.BASE_DATOS}.${Global.EMPRESA}.ARTICULO art,
                 Despacho.dbo.tickets_detalle_productos pl
                 where 
                 pl.PEDIDO=tdp.pedido and

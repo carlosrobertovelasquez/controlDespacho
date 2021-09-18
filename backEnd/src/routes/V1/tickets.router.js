@@ -20,6 +20,8 @@ import {
   getInsertReviso,
   getRevisoTicketid,
   getUpdateReviso,
+  getUpdateTicketReviso,
+  getActualizacionPedido,
 } from "../../controllers/V1/tickets.controller";
 import { checkAuth } from "../../Middlewares/auth-middleware";
 import { handleRequestErrors } from "../../Middlewares/validator-middleware";
@@ -29,6 +31,7 @@ const router = Router();
 
 router.get("/api/v1/ticketProductos/:id", getTicketDetalleProductoById);
 router.get("/api/v1/ticketPedidos/:id", getTicketDetallePedidoById);
+
 router.get("/api/v1/getRevisoTicketid/:id", getRevisoTicketid);
 
 router.get("/api/v1/getPreparoTicketid/:id", getPreparoTicketid);
@@ -41,6 +44,8 @@ router.get("/api/v1/ticketById/:id", getTicketById);
 router.get("/api/v1/ticketImpresion/", getTicketImpresion);
 router.post("/api/v1/getUpdatePrepraro/", getUpdatePrepraro);
 router.post("/api/v1/getUpdateReviso/", getUpdateReviso);
+router.post("/api/v1/getUpdateTicketReviso/", getUpdateTicketReviso);
+
 router.post("/api/v1/createTicket", createTicket);
 router.post("/api/v1/createTicketPedidos", createTicketPedido);
 router.get("/api/v1/maxticket", getMaxTicket);
@@ -48,5 +53,6 @@ router.get("/api/v1/getTicketAll", getTicketAll);
 router.get("/api/v1/getTicketTodos", getTicketTodos);
 router.put("/api/v1/ticket/:pedido", getActualizarTcargaPedido);
 router.put("/api/v1/ticketEstado/:id", cambioEstado);
+router.put("/api/v1/ticketEstado2/:id", getActualizacionPedido);
 
 export default router;

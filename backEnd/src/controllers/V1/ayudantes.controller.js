@@ -1,4 +1,5 @@
 import { response } from "express";
+import { query } from "express-validator";
 import { pool } from "mssql";
 import { getConnection, sql, queries } from "../../database";
 
@@ -71,8 +72,22 @@ export const deleteAyudante = async (req, res) => {
     const result = await pool
       .request()
       .input("Id", id)
-      .query(queries.deleteAyudantes);
-    res.send(result);
+      .query(
+        `select * from despacho.dbo.ayudantes 
+        where id in (select preparador from Despacho.dbo.tickets where preparador =@Id) `
+      );
+    if (result.recordset[0]) {
+      return res.json({
+        success: false,
+        message: "El Preparador No se puede Elinimar Tiene asignado Tickets",
+      });
+    } else {
+      await pool
+        .request()
+        .input("Id", sql.VarChar, id)
+        .query(queries.deleteAyudantes);
+      res.json({ success: true, message: "Se Elimino con Exito" });
+    }
   } catch (error) {
     res.status(500);
     res.send(error.message);
